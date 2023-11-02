@@ -2,10 +2,10 @@
 
 def pipeline = new org.rust.AppPipeline(steps: this,
       initSubmodules: true,
-      envImageName: 'docker.soramitsu.co.jp/sora2/env:sub4',
+      envImageName: 'docker.soramitsu.co.jp/sora2/env:liberland-env',
       appImageName: 'docker.soramitsu.co.jp/sora2/liberland',
-      pushTags: ['master': 'dev'],
+      pushTags: ['feature/dops-2837': 'dev'],
       buildTestCmds: ['housekeeping/build.sh'],
-      codeCoverageCommand:[]
+      codeCoverage: false
 )
 pipeline.runPipeline()
