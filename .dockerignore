@@ -1,7 +1,5 @@
 .git
-target
 tmp
-**/target
 doc
 Dockerfile
 .dockerignore

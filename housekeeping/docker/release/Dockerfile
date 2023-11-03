@@ -1,20 +1,19 @@
-FROM debian:buster-slim as rusty
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git clang curl libssl-dev llvm libudev-dev make protobuf-compiler pkg-config && rm -rf /var/lib/apt/lists/*
-RUN curl https://sh.rustup.rs -sSf | CARGO_HOME=/usr/local RUSTUP_HOME=/usr/local sh -s -- --default-toolchain nightly -y
-RUN rustup default nightly
-RUN rustup target add wasm32-unknown-unknown --toolchain nightly
+FROM debian:bookworm-20231030-slim
 WORKDIR /app
-
-FROM rusty as builder
-COPY . .
-RUN cargo build --release
-
-FROM debian:buster-slim AS runtime
-EXPOSE 30333 9933 9944
-VOLUME /data
-COPY --from=builder /app/target/release/substrate /node
+# Install dependencies
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    ca-certificates nano curl && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    find /var/lib/apt/lists/ -type f -not -name lock -delete
 COPY specs /specs
-RUN useradd -Ms /bin/bash liberland
-RUN mkdir /data && chown liberland:liberland -R /specs /node /data
-USER liberland
-ENTRYPOINT [ "/node" ]
+COPY target /target
+RUN useradd substrate -u 10000
+RUN mkdir /chain && \
+    chown 10000:10000 /chain /specs
+USER substrate
+
+COPY ./target/release/substrate /usr/local/bin/substrate
+
+ENTRYPOINT ["substrate"]
