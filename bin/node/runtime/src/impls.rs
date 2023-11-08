@@ -32,10 +32,10 @@ use frame_support::{
 	},
 	dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo, Dispatchable, DispatchInfo, GetDispatchInfo},
 };
-use sp_runtime::{AccountId32, DispatchError, DispatchResult, traits::Morph};
+use sp_runtime::{AccountId32, DispatchError, traits::Morph};
 use pallet_asset_tx_payment::HandleCredit;
 use sp_staking::{EraIndex, OnStakerSlash};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::collections::btree_map::BTreeMap;
 use sp_core::H256;
 use scale_info::TypeInfo;
 use frame_support::pallet_prelude::Weight;
@@ -291,7 +291,7 @@ pub struct LiberlandMessageStatusNotifier;
 
 impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for LiberlandMessageStatusNotifier {
 	fn update_status(
-		_: bridge_types::GenericNetworkId, 
+		_: GenericNetworkId, 
 		_: H256, 
 		_: bridge_types::types::MessageStatus, 
 		_: bridge_types::GenericTimepoint
@@ -299,7 +299,7 @@ impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for Li
 	}
 
 	fn inbound_request(
-		_: bridge_types::GenericNetworkId, 
+		_: GenericNetworkId, 
 		_: H256, 
 		_: bridge_types::GenericAccount, 
 		_: AccountId, 
@@ -311,7 +311,7 @@ impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for Li
 	}
 	
 	fn outbound_request(
-		_: bridge_types::GenericNetworkId, 
+		_: GenericNetworkId, 
 		_: H256, 
 		_: AccountId, 
 		_: bridge_types::GenericAccount, 
@@ -322,74 +322,11 @@ impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for Li
 	}
 }
 
-// impl bridge_types::traits::BridgeAssetRegistry<AccountId, u32> for LiberlandMessageStatusNotifier {
-// 	type AssetName = Vec<u8>;
-// 	type AssetSymbol =  Vec<u8>;
-
-// 	fn register_asset(
-// 		_: GenericNetworkId, 
-// 		_: <Self as bridge_types::traits::BridgeAssetRegistry<AccountId, u32>>::AssetName, 
-// 		_: <Self as bridge_types::traits::BridgeAssetRegistry<AccountId, u32>>::AssetSymbol
-// 	) -> Result<u32, DispatchError> { 
-// 		// todo!()
-// 		// Asset::create()
-// 		Err(DispatchError::Other("NOT AVAILIBLE"))
-// 	}
-
-// 	fn manage_asset(
-// 		_: GenericNetworkId, 
-// 		_: u32
-// 	) -> Result<(), DispatchError> { 
-// 		Ok(())
-// 	}
-
-// 	fn get_raw_info(
-// 		asset_id: u32
-// 	) -> bridge_types::types::RawAssetInfo { 
-// 		// let a = <crate::Assets as crate::Runtime>::Metadata::get(asset_id);
-// 		// let a = crate::Assets::Metadata::get(asset_id);
-// 		// let a = crate::Asset;
-// 		// todo!();
-// 		bridge_types::types::RawAssetInfo {
-// 			name: Vec::new(),
-// 			symbol: Vec::new(),
-// 			precision: 0,
-// 		}
-// 	}
-// }
-
-impl bridge_types::traits::BridgeAssetLocker<AccountId> for LiberlandMessageStatusNotifier {
-	type AssetId = u32;
-	type Balance = Balance;
-
-	fn lock_asset(
-			network_id: GenericNetworkId,
-			asset_kind: bridge_types::types::AssetKind,
-			who: &AccountId,
-			asset_id: &Self::AssetId,
-			amount: &Self::Balance,
-		) -> DispatchResult {
-		// todo!()
-		Ok(())
-	}
-
-	fn unlock_asset(
-			network_id: GenericNetworkId,
-			asset_kind: bridge_types::types::AssetKind,
-			who: &AccountId,
-			asset_id: &Self::AssetId,
-			amount: &Self::Balance,
-		) -> DispatchResult {
-		// todo!()
-		Ok(())
-	}
-}
-
 pub struct GenericTimepointProvider;
 
 impl bridge_types::traits::TimepointProvider for GenericTimepointProvider {
     fn get_timepoint() -> bridge_types::GenericTimepoint {
-        bridge_types::GenericTimepoint::Sora(crate::System::block_number())
+        bridge_types::GenericTimepoint::Liberland(crate::System::block_number())
     }
 }
 
@@ -408,11 +345,11 @@ impl Dispatchable for DispatchableSubstrateBridgeCall {
     ) -> sp_runtime::DispatchResultWithInfo<Self::PostInfo> {
         frame_support::log::debug!("Dispatching SubstrateBridgeCall: {:?}", self.0);
         match self.0 {
-            bridge_types::substrate::BridgeCall::ParachainApp(msg) => Err(DispatchErrorWithPostInfo {
+            bridge_types::substrate::BridgeCall::ParachainApp(_) => Err(DispatchErrorWithPostInfo {
                 post_info: Default::default(),
                 error: DispatchError::Other("Unavailable"),
             }),
-            bridge_types::substrate::BridgeCall::XCMApp(_msg) => Err(DispatchErrorWithPostInfo {
+            bridge_types::substrate::BridgeCall::XCMApp(_) => Err(DispatchErrorWithPostInfo {
                 post_info: Default::default(),
                 error: DispatchError::Other("Unavailable"),
             }),
@@ -438,8 +375,8 @@ impl Dispatchable for DispatchableSubstrateBridgeCall {
 impl GetDispatchInfo for DispatchableSubstrateBridgeCall {
     fn get_dispatch_info(&self) -> DispatchInfo {
         match &self.0 {
-            bridge_types::substrate::BridgeCall::ParachainApp(msg) => Default::default(),
-            bridge_types::substrate::BridgeCall::XCMApp(_msg) => Default::default(),
+            bridge_types::substrate::BridgeCall::ParachainApp(_) => Default::default(),
+            bridge_types::substrate::BridgeCall::XCMApp(_) => Default::default(),
             bridge_types::substrate::BridgeCall::DataSigner(msg) => {
                 let call: bridge_data_signer::Call<crate::Runtime> = msg.clone().into();
                 call.get_dispatch_info()
@@ -500,7 +437,6 @@ impl bridge_types::traits::Verifier for MultiVerifier {
             #[cfg(feature = "runtime-benchmarks")]
             MultiProof::Empty => Ok(()),
         }
-		// todo!()
     }
 
     fn verify_weight(proof: &Self::Proof) -> Weight {
@@ -509,7 +445,6 @@ impl bridge_types::traits::Verifier for MultiVerifier {
             #[cfg(feature = "runtime-benchmarks")]
             MultiProof::Empty => Default::default(),
         }
-		// todo!()
     }
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -537,20 +472,10 @@ impl bridge_types::traits::BalancePrecisionConverter<u32, crate::Balance, bridge
     for GenericBalancePrecisionConverter
 {
     fn from_sidechain(
-        asset_id: &u32,
-        sidechain_precision: u8,
+        _: &u32,
+        _: u8,
         amount: bridge_types::GenericBalance,
     ) -> Option<crate::Balance> {
-        // let thischain_precision = crate::Assets::asset_infos(asset_id).2;
-        // match amount {
-        //     GenericBalance::Substrate(val) => BalancePrecisionConverter::convert_precision(
-        //         sidechain_precision,
-        //         thischain_precision,
-        //         val,
-        //     ),
-        //     GenericBalance::EVM(_) => None,
-        // }
-		// todo!()
 		match amount {
 			bridge_types::GenericBalance::Substrate(balance) => Some(balance),
 			_ => None,
@@ -558,17 +483,10 @@ impl bridge_types::traits::BalancePrecisionConverter<u32, crate::Balance, bridge
     }
 
     fn to_sidechain(
-        asset_id: &u32,
-        sidechain_precision: u8,
+        _: &u32,
+        _: u8,
         amount: crate::Balance,
     ) -> Option<bridge_types::GenericBalance> {
-        // let thischain_precision = crate::Assets::asset_infos(asset_id).2;
-        // let amount = BalancePrecisionConverter::convert_precision(
-        //     thischain_precision,
-        //     sidechain_precision,
-        //     amount,
-        // )?;
-        // Some(GenericBalance::Substrate(amount))
 		Some(bridge_types::GenericBalance::Substrate(amount))
     }
 }
