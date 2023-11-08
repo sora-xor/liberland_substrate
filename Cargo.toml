@@ -125,6 +125,4 @@ bridge-data-signer = { git = "https://github.com/sora-xor//sora2-common.git", br
 multisig-verifier = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
 substrate-bridge-channel = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
 substrate-bridge-app = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
-# bridge-channel-rpc = { path = "../sora2-common/pallets/substrate-channel/rpc" }
 substrate-assets-bridgeproxy = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
-
