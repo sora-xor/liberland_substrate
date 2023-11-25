@@ -326,7 +326,7 @@ pub struct GenericTimepointProvider;
 
 impl bridge_types::traits::TimepointProvider for GenericTimepointProvider {
     fn get_timepoint() -> bridge_types::GenericTimepoint {
-        bridge_types::GenericTimepoint::Liberland(crate::System::block_number())
+        bridge_types::GenericTimepoint::Sora(crate::System::block_number())
     }
 }
 
