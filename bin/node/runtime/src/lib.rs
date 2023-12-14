@@ -1526,7 +1526,7 @@ impl pallet_office::Config<AssetRegistryOfficeInstance> for Runtime {
 parameter_types! {
 	pub const BridgeMaxMessagePayloadSize: u32 = 256;
 	pub const BridgeMaxMessagesPerCommit: u32 = 20;
-	pub const ThisNetworkId: bridge_types::GenericNetworkId = bridge_types::GenericNetworkId::Sub(bridge_types::SubNetworkId::Custom(1));
+	pub const ThisNetworkId: bridge_types::GenericNetworkId = bridge_types::GenericNetworkId::Sub(bridge_types::SubNetworkId::Liberland);
 	pub const BridgeMaxPeers: u32 = 50;
     // Not as important as some essential transactions (e.g. im_online or similar ones)
     pub DataSignerPriority: TransactionPriority = Perbill::from_percent(10) * TransactionPriority::max_value();
@@ -1633,17 +1633,7 @@ impl substrate_assets_bridgeproxy:: Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TechAcc = TechAcc;
 	type MinBalance = MinAssetBalance;
-	type AssetIdGenerator = LiberlandAssetIdGenerator;
 } 
-use bridge_types::H256;
-pub struct LiberlandAssetIdGenerator;
-
-impl substrate_assets_bridgeproxy::AssetIdGenerator<u32> for LiberlandAssetIdGenerator {
-	fn generate_asset_id(hash: H256) -> u32 {
-		let arr: [u8; 4] = hash[..4].try_into().unwrap_or_default();
-		u32::from_be_bytes(arr)
-	}
-}
 
 construct_runtime!(
 	pub enum Runtime where
@@ -1713,7 +1703,7 @@ construct_runtime!(
         SubstrateDispatch: dispatch::{Pallet, Storage, Event<T>, Origin<T>} = 63,
         BridgeDataSigner: bridge_data_signer::{Pallet, Storage, Event<T>, Call, ValidateUnsigned} = 64,
         MultisigVerifier: multisig_verifier::{Pallet, Storage, Event<T>, Call} = 65,
-		SoraBridgeProxy: substrate_assets_bridgeproxy::{Pallet, Storage, Event<T>, Call} = 66,
+		SoraBridgeProxy: substrate_assets_bridgeproxy::{Pallet, Storage, Event<T>} = 66,
 	}
 );
 
