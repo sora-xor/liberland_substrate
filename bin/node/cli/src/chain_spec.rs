@@ -35,8 +35,8 @@ use kitchensink_runtime::{
 	IdentityOfficePalletId, AssetRegistryOfficeConfig,
 	LandRegistryOfficePalletId, AssetRegistryOfficePalletId,
 	MetaverseLandRegistryOfficeConfig, MetaverseLandRegistryOfficePalletId,
-	SenateConfig, LLM,
-	impls::{RegistryCallFilter, IdentityCallFilter, NftsCallFilter},
+	SenateConfig, LLM, SoraBridgeProxyConfig,
+	impls::{RegistryCallFilter, IdentityCallFilter, NftsCallFilter}, GenericNetworkId, SubNetworkId, TechAcc,
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::{ChainSpecExtension, Properties};
@@ -272,6 +272,11 @@ fn mainnet_config_genesis() -> GenesisConfig {
 		metaverse_land_registry_office: Default::default(),
 		asset_registry_office: Default::default(),
 		substrate_bridge_outbound_channel: Default::default(),
+		sora_bridge_proxy: SoraBridgeProxyConfig {
+			register_tech_accounts: vec![
+				(GenericNetworkId::Sub(SubNetworkId::Mainnet), TechAcc::get())
+			]
+		},
 	}
 }
 
@@ -453,6 +458,11 @@ fn bastiat_testnet_config_genesis() -> GenesisConfig {
 		metaverse_land_registry_office: Default::default(),
 		asset_registry_office: Default::default(),
 		substrate_bridge_outbound_channel: Default::default(),
+		sora_bridge_proxy: SoraBridgeProxyConfig {
+			register_tech_accounts: vec![
+				(GenericNetworkId::Sub(SubNetworkId::Mainnet), TechAcc::get())
+			]
+		},
 	}
 }
 
@@ -829,6 +839,11 @@ pub fn testnet_genesis(
 			clerks: nfts_clerks,
 		},
 		substrate_bridge_outbound_channel: Default::default(),
+		sora_bridge_proxy: SoraBridgeProxyConfig {
+			register_tech_accounts: vec![
+				(GenericNetworkId::Sub(SubNetworkId::Mainnet), TechAcc::get())
+			]
+		},
 	}
 }
 

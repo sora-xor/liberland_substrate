@@ -84,6 +84,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 use sp_runtime::transaction_validity::TransactionLongevity;
+pub use bridge_types::{GenericNetworkId, SubNetworkId};
 
 #[cfg(any(feature = "std", test))]
 pub use frame_system::Call as SystemCall;
@@ -1617,7 +1618,6 @@ impl substrate_bridge_channel::inbound::Config for Runtime {
 impl substrate_bridge_channel::outbound::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
-    // type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
     type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
     type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
     type AuxiliaryDigestHandler = LeafProvider;
@@ -1633,6 +1633,7 @@ impl substrate_assets_bridgeproxy:: Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TechAcc = TechAcc;
 	type MinBalance = MinAssetBalance;
+	type AssetIdGenerator = impls::LiberlandAssetIdGenerator;
 } 
 
 construct_runtime!(
@@ -1703,7 +1704,7 @@ construct_runtime!(
         SubstrateDispatch: dispatch::{Pallet, Storage, Event<T>, Origin<T>} = 63,
         BridgeDataSigner: bridge_data_signer::{Pallet, Storage, Event<T>, Call, ValidateUnsigned} = 64,
         MultisigVerifier: multisig_verifier::{Pallet, Storage, Event<T>, Call} = 65,
-		SoraBridgeProxy: substrate_assets_bridgeproxy::{Pallet, Storage, Event<T>} = 66,
+		SoraBridgeProxy: substrate_assets_bridgeproxy = 66,
 	}
 );
 

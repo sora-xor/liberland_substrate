@@ -397,7 +397,6 @@ impl GetDispatchInfo for DispatchableSubstrateBridgeCall {
     }
 }
 
-
 pub struct SoraBridgeCallFilter;
 
 impl Contains<DispatchableSubstrateBridgeCall> for SoraBridgeCallFilter {
@@ -489,6 +488,15 @@ impl bridge_types::traits::BalancePrecisionConverter<u32, crate::Balance, bridge
     ) -> Option<bridge_types::GenericBalance> {
 		Some(bridge_types::GenericBalance::Substrate(amount))
     }
+}
+
+pub struct LiberlandAssetIdGenerator;
+
+impl substrate_assets_bridgeproxy::AssetIdGenerator<u32> for LiberlandAssetIdGenerator {
+	fn generate_asset_id(hash: bridge_types::H256) -> u32 {
+		let arr: [u8; 4] = hash[..4].try_into().unwrap_or_default();
+		u32::from_be_bytes(arr)
+	}
 }
 
 #[cfg(test)]
