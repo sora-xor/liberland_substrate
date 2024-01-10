@@ -39,7 +39,7 @@ use sp_std::collections::btree_map::BTreeMap;
 use sp_core::H256;
 use scale_info::TypeInfo;
 use frame_support::pallet_prelude::Weight;
-use bridge_types::GenericNetworkId;
+use bridge_types::{GenericNetworkId, LiberlandAssetId};
 use sp_runtime::traits::Convert;
 
 #[cfg(feature = "std")]
@@ -289,7 +289,7 @@ impl liberland_traits::OnLLMPoliticsUnlock<AccountId32> for OnLLMPoliticsUnlock
 
 pub struct LiberlandMessageStatusNotifier;
 
-impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for LiberlandMessageStatusNotifier {
+impl bridge_types::traits::MessageStatusNotifier<LiberlandAssetId, AccountId, Balance> for LiberlandMessageStatusNotifier {
 	fn update_status(
 		_: GenericNetworkId, 
 		_: H256, 
@@ -303,7 +303,7 @@ impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for Li
 		_: H256, 
 		_: bridge_types::GenericAccount, 
 		_: AccountId, 
-		_: u32, 
+		_: LiberlandAssetId, 
 		_: Balance, 
 		_: bridge_types::GenericTimepoint, 
 		_: bridge_types::types::MessageStatus
@@ -315,7 +315,7 @@ impl bridge_types::traits::MessageStatusNotifier<u32, AccountId, Balance> for Li
 		_: H256, 
 		_: AccountId, 
 		_: bridge_types::GenericAccount, 
-		_: u32, 
+		_: LiberlandAssetId, 
 		_: Balance, 
 		_: bridge_types::types::MessageStatus
 	) { 
@@ -453,8 +453,8 @@ impl bridge_types::traits::Verifier for MultiVerifier {
 }
 
 pub struct SoraAssetIdConverter;
-impl Convert<u32, bridge_types::GenericAssetId> for SoraAssetIdConverter {
-    fn convert(a: u32) -> bridge_types::GenericAssetId {
+impl Convert<LiberlandAssetId, bridge_types::GenericAssetId> for SoraAssetIdConverter {
+    fn convert(a: LiberlandAssetId) -> bridge_types::GenericAssetId {
         bridge_types::GenericAssetId::Liberland(a.into())
     }
 }
@@ -467,11 +467,11 @@ impl Convert<crate::AccountId, bridge_types::GenericAccount> for SoraAccountIdCo
 }
 
 pub struct GenericBalancePrecisionConverter;
-impl bridge_types::traits::BalancePrecisionConverter<u32, crate::Balance, bridge_types::GenericBalance>
+impl bridge_types::traits::BalancePrecisionConverter<LiberlandAssetId, crate::Balance, bridge_types::GenericBalance>
     for GenericBalancePrecisionConverter
 {
     fn from_sidechain(
-        _: &u32,
+        _: &LiberlandAssetId,
         _: u8,
         amount: bridge_types::GenericBalance,
     ) -> Option<crate::Balance> {
@@ -482,21 +482,12 @@ impl bridge_types::traits::BalancePrecisionConverter<u32, crate::Balance, bridge
     }
 
     fn to_sidechain(
-        _: &u32,
+        _: &LiberlandAssetId,
         _: u8,
         amount: crate::Balance,
     ) -> Option<bridge_types::GenericBalance> {
 		Some(bridge_types::GenericBalance::Substrate(amount))
     }
-}
-
-pub struct LiberlandAssetIdGenerator;
-
-impl substrate_assets_bridgeproxy::AssetIdGenerator<u32> for LiberlandAssetIdGenerator {
-	fn generate_asset_id(hash: bridge_types::H256) -> u32 {
-		let arr: [u8; 4] = hash[..4].try_into().unwrap_or_default();
-		u32::from_be_bytes(arr)
-	}
 }
 
 #[cfg(test)]

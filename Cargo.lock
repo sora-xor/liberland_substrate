@@ -586,6 +586,7 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 [[package]]
 name = "bridge-common"
 version = "0.1.0"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bitvec",
  "bridge-types",
@@ -603,6 +604,7 @@ dependencies = [
 [[package]]
 name = "bridge-data-signer"
 version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-common",
  "bridge-types",
@@ -620,6 +622,7 @@ dependencies = [
 [[package]]
 name = "bridge-types"
 version = "0.1.0"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "derivative",
  "ethabi",
@@ -1674,6 +1677,7 @@ dependencies = [
 [[package]]
 name = "dispatch"
 version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-types",
  "frame-benchmarking",
@@ -3399,6 +3403,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sora-liberland-bridgeproxy",
  "sp-api",
  "sp-authority-discovery",
  "sp-block-builder",
@@ -3414,7 +3419,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "static_assertions",
- "substrate-assets-bridgeproxy",
  "substrate-bridge-app",
  "substrate-bridge-channel",
  "substrate-wasm-builder",
@@ -3468,6 +3472,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 [[package]]
 name = "leaf-provider"
 version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-types",
  "ethabi",
@@ -3487,6 +3492,7 @@ dependencies = [
 [[package]]
 name = "leaf-provider-runtime-api"
 version = "0.1.0"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-types",
  "parity-scale-codec",
@@ -4382,6 +4388,7 @@ checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
 [[package]]
 name = "multisig-verifier"
 version = "0.1.0"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-common",
  "bridge-types",
@@ -8504,6 +8511,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sora-liberland-bridgeproxy"
+version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
+dependencies = [
+ "bridge-types",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "sp-api"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#6fa7fe1326ecaab9921c2c3888530ad679cfbb87"
@@ -9354,24 +9381,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "substrate-assets-bridgeproxy"
-version = "0.1.1"
-dependencies = [
- "bridge-types",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-assets",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "substrate-bip39"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9387,6 +9396,7 @@ dependencies = [
 [[package]]
 name = "substrate-bridge-app"
 version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-types",
  "ethabi",
@@ -9408,6 +9418,7 @@ dependencies = [
 [[package]]
 name = "substrate-bridge-channel"
 version = "0.1.1"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"
 dependencies = [
  "bridge-types",
  "ethabi",
@@ -11449,3 +11460,4 @@ dependencies = [
 [[patch.unused]]
 name = "leaf-provider-rpc"
 version = "0.1.0"
+source = "git+https://github.com/sora-xor//sora2-common.git?branch=update_liberland#d78792d142968c1f9f7bbd974375e1bb6b1de599"

@@ -25,6 +25,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
 
+use bridge_types::LiberlandAssetId;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_election_provider_support::{
 	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
@@ -1534,11 +1535,8 @@ parameter_types! {
     // We don't want to have not relevant imports be stuck in transaction pool
     // for too long
     pub DataSignerLongevity: TransactionLongevity = EPOCH_DURATION_IN_BLOCKS as u64;
-	// pub TechAcc: AccountId = [66; 32].into();
-	// TEMP!!!!
-	// pub TechAcc: AccountId = hex_literal::hex!("`5e9f3c16b9da0caf4749409c6bce2c34caaaed00f6b2e891bf4e891b50a0e7eb").into();
-	pub TechAcc: AccountId = AccountId::new(hex_literal::hex!("dc5201cda01113be2ca9093c49a92763c95c708dd61df70c945df749c365da5d"));
 	pub const MinAssetBalance: u32 = 1;
+	pub TechAcc: AccountId = AccountId::new(hex_literal::hex!("dc5201cda01113be2ca9093c49a92763c95c708dd61df70c945df749c365da5d"));
 }
 
 // Sora Bridge
@@ -1557,11 +1555,9 @@ impl substrate_bridge_app::Config for Runtime {
         dispatch::EnsureAccount<bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>>;
     type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
     type AssetRegistry = SoraBridgeProxy;
-    // type AssetRegistry = SoraBridgeProxy;
     type AccountIdConverter = impls::SoraAccountIdConverter;
     type AssetIdConverter = impls::SoraAssetIdConverter;
     type BalancePrecisionConverter = impls::GenericBalancePrecisionConverter;
-    // type BridgeAssetLocker = impls::LiberlandMessageStatusNotifier;
     type BridgeAssetLocker = SoraBridgeProxy;
     type WeightInfo = ();
 }
@@ -1621,7 +1617,7 @@ impl substrate_bridge_channel::outbound::Config for Runtime {
     type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
     type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
     type AuxiliaryDigestHandler = LeafProvider;
-    type AssetId = u32;
+    type AssetId = bridge_types::LiberlandAssetId;
     type Balance = Balance;
     type TimepointProvider = impls::GenericTimepointProvider;
     type ThisNetworkId = ThisNetworkId;
@@ -1629,11 +1625,11 @@ impl substrate_bridge_channel::outbound::Config for Runtime {
 }
 
 // Sora Bridge
-impl substrate_assets_bridgeproxy:: Config for Runtime {
+impl sora_liberland_bridgeproxy::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type TechAcc = TechAcc;
 	type MinBalance = MinAssetBalance;
-	type AssetIdGenerator = impls::LiberlandAssetIdGenerator;
+	type Balances = Balances;
+	type AssetId = LiberlandAssetId;
 } 
 
 construct_runtime!(
@@ -1704,7 +1700,7 @@ construct_runtime!(
         SubstrateDispatch: dispatch::{Pallet, Storage, Event<T>, Origin<T>} = 63,
         BridgeDataSigner: bridge_data_signer::{Pallet, Storage, Event<T>, Call, ValidateUnsigned} = 64,
         MultisigVerifier: multisig_verifier::{Pallet, Storage, Event<T>, Call} = 65,
-		SoraBridgeProxy: substrate_assets_bridgeproxy = 66,
+		SoraBridgeProxy: sora_liberland_bridgeproxy = 66,
 	}
 );
 
