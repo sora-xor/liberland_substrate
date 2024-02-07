@@ -6,6 +6,7 @@ def pipeline = new org.rust.AppPipeline(steps: this,
       appImageName: 'docker.soramitsu.co.jp/sora2/liberland',
       pushTags: ['feature/dops-2837': 'dev'],
       buildTestCmds: ['housekeeping/build.sh'],
+      deepSecretScannerExclusion:   ["/specs/mainnet.json"],
       buildArtifacts: "target/release/wbuild/kitchensink-runtime/kitchensink_runtime.compact.compressed.wasm",
       codeCoverage: false
 )
