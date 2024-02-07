@@ -7,7 +7,7 @@ def pipeline = new org.docker.AppPipeline(steps: this,
     triggerCommonBuildExpression: (env.BRANCH_NAME in ['feature/dops-2837']),
     triggerCommonBuildGrepRegex:  'housekeeping',
     secretScannerExclusion:       '.*Cargo.toml',
-    ecretScannerExclusion:        '/specs/mainnet.json',
+    secretScannerExclusion:        '/specs/mainnet.json',
     deepSecretScannerExclusion:   ["/specs/mainnet.json"],
     nameCI:                       'env-CI',
     dockerImageTags:              ['feature/dops-2837':'liberland-env'])
