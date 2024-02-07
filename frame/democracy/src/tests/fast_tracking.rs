@@ -43,7 +43,7 @@ fn fast_track_referendum_works() {
 			Ok(ReferendumStatus {
 				end: 2,
 				proposal: set_balance_proposal(2),
-				dispatch_origin: DispatchOrigin::Root, 
+				dispatch_origin: DispatchOrigin::Root,
 				threshold: VoteThreshold::SimpleMajority,
 				delay: 0,
 				tally: Tally { ayes: 0, nays: 0, aye_voters: 00000, nay_voters: 00000, turnout: 0 },
@@ -82,7 +82,7 @@ fn instant_referendum_works() {
 			Ok(ReferendumStatus {
 				end: 1,
 				proposal: set_balance_proposal(2),
-				dispatch_origin: DispatchOrigin::Root, 
+				dispatch_origin: DispatchOrigin::Root,
 				threshold: VoteThreshold::SimpleMajority,
 				delay: 0,
 				tally: Tally { ayes: 0, nays: 0, aye_voters: 00000, nay_voters: 00000, turnout: 0 },
@@ -126,7 +126,7 @@ fn instant_next_block_referendum_backed() {
 			Ok(ReferendumStatus {
 				end: start_block_number + voting_period,
 				proposal,
-				dispatch_origin: DispatchOrigin::Root, 
+				dispatch_origin: DispatchOrigin::Root,
 				threshold: VoteThreshold::SimpleMajority,
 				delay,
 				tally: Tally { ayes: 0, nays: 0, aye_voters: 00000, nay_voters: 00000, turnout: 0 },

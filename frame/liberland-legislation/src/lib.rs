@@ -128,7 +128,7 @@ pub mod pallet {
 				[Constitution, InternationalTreaty, Law, Tier3, Tier4, Tier5, Decision];
 			for i in VALUES {
 				if v == i as u32 {
-					return i
+					return i;
 				}
 			}
 			InvalidTier
@@ -231,7 +231,7 @@ pub mod pallet {
 				Constitution => {
 					T::ConstitutionOrigin::ensure_origin(origin)?;
 					if index == 0 {
-						return Err(Error::<T>::ProtectedLegislation.into())
+						return Err(Error::<T>::ProtectedLegislation.into());
 					}
 				},
 				InternationalTreaty => {

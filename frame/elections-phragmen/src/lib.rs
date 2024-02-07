@@ -19,7 +19,6 @@
 
 // You should have received a copy of the MIT license along with this program. If not, see https://opensource.org/licenses/MIT
 
-
 //! # Phragmén Election Module.
 //!
 //! An election module based on sequential phragmen.
@@ -112,7 +111,7 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use liberland_traits::{CitizenshipChecker, LLM, LLInitializer};
+use liberland_traits::{CitizenshipChecker, LLInitializer, LLM};
 use scale_info::TypeInfo;
 use sp_npos_elections::{ElectionResult, ExtendedBalance};
 use sp_runtime::{
@@ -884,7 +883,7 @@ impl<T: Config> Pallet<T> {
 
 		if candidates_and_deposit.len().is_zero() {
 			Self::deposit_event(Event::EmptyTerm);
-			return T::DbWeight::get().reads(3)
+			return T::DbWeight::get().reads(3);
 		}
 
 		// All of the new winners that come out of phragmen will thus have a deposit recorded.
@@ -916,7 +915,7 @@ impl<T: Config> Pallet<T> {
 					"Failed to run election. Number of voters exceeded",
 				);
 				Self::deposit_event(Event::ElectionError);
-				return T::DbWeight::get().reads(3 + max_voters as u64)
+				return T::DbWeight::get().reads(3 + max_voters as u64);
 			},
 		}
 
@@ -1125,14 +1124,13 @@ mod tests {
 	};
 	use frame_system::ensure_signed;
 	use sp_runtime::{
-		Permill,
 		testing::{Header, H256},
 		traits::{BlakeTwo256, IdentityLookup},
-		BuildStorage,
+		BuildStorage, Permill,
 	};
 
 	use frame_support::{construct_runtime, ord_parameter_types, traits::EitherOfDiverse};
-	use frame_system::{EnsureRoot, EnsureSignedBy, EnsureSigned};
+	use frame_system::{EnsureRoot, EnsureSigned, EnsureSignedBy};
 
 	use crate::{Candidates, Config, Error, Renouncing, SeatHolder, Voter};
 	use frame_support::{assert_noop, assert_ok};

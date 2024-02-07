@@ -774,7 +774,7 @@ pub mod pallet {
 				|collection_details, collection_config| {
 					// Issuer can mint regardless of mint settings
 					if Self::has_role(&collection, &caller, CollectionRole::Issuer) {
-						return Ok(())
+						return Ok(());
 					}
 
 					let mint_settings = collection_config.mint_settings;
@@ -1002,10 +1002,10 @@ pub mod pallet {
 					if T::Currency::reserve(&details.deposit.account, deposit - old).is_err() {
 						// NOTE: No alterations made to collection_details in this iteration so far,
 						// so this is OK to do.
-						continue
+						continue;
 					}
 				} else {
-					continue
+					continue;
 				}
 				details.deposit.amount = deposit;
 				Item::<T, I>::insert(&collection, &item, &details);
@@ -1796,9 +1796,9 @@ pub mod pallet {
 		///
 		/// - `collection`: The collection to set requirement for
 		/// - `citizenship_required`: If true, only citizens will be able to receive items.
-		/// 
+		///
 		/// Note that this doesn't affect current owners.
-		/// 
+		///
 		/// Added by Liberland
 		#[pallet::call_index(99)]
 		#[pallet::weight(T::WeightInfo::claim_swap())]
@@ -1810,11 +1810,7 @@ pub mod pallet {
 			let maybe_check_owner = T::ForceOrigin::try_origin(origin)
 				.map(|_| None)
 				.or_else(|origin| ensure_signed(origin).map(Some).map_err(DispatchError::from))?;
-			Self::do_set_citizenship_required(
-				collection,
-				citizenship_required,
-				maybe_check_owner,
-			)
+			Self::do_set_citizenship_required(collection, citizenship_required, maybe_check_owner)
 		}
 	}
 }

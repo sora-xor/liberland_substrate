@@ -159,20 +159,17 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	ensure,
+	pallet_prelude::{MaxEncodedLen, TypeInfo},
 	traits::{
 		defensive_prelude::*,
-		EnsureOrigin,
 		schedule::{v3::Named as ScheduleNamed, DispatchTime},
-		Bounded, Currency, Get, LockIdentifier, LockableCurrency, QueryPreimage,
-		ReservableCurrency, StorePreimage,
-		Contains,
+		Bounded, Contains, Currency, EnsureOrigin, Get, LockIdentifier, LockableCurrency,
+		QueryPreimage, ReservableCurrency, StorePreimage,
 	},
-	pallet_prelude::{MaxEncodedLen, TypeInfo},
-	BoundedVec,
-	RuntimeDebug,
 	weights::Weight,
+	BoundedVec, RuntimeDebug,
 };
-use liberland_traits::{CitizenshipChecker, LLM, LLInitializer};
+use liberland_traits::{CitizenshipChecker, LLInitializer, LLM};
 use sp_runtime::{
 	traits::{Bounded as ArithBounded, One, Saturating, StaticLookup, Zero},
 	ArithmeticError, DispatchError, DispatchResult,
@@ -186,7 +183,9 @@ mod vote_threshold;
 pub mod weights;
 pub use conviction::Conviction;
 pub use pallet::*;
-pub use types::{Delegations, ReferendumInfo, ReferendumStatus, DispatchOrigin, Tally, UnvoteScope};
+pub use types::{
+	Delegations, DispatchOrigin, ReferendumInfo, ReferendumStatus, Tally, UnvoteScope,
+};
 pub use vote::{AccountVote, Vote, Voting};
 pub use vote_threshold::{Approved, VoteThreshold};
 pub use weights::WeightInfo;
@@ -222,8 +221,8 @@ pub enum RawOrigin<Balance> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::{DispatchResult, *};
-	use frame_support::{BoundedVec};
 	use frame_support::pallet_prelude::*;
+	use frame_support::BoundedVec;
 	use frame_system::pallet_prelude::*;
 	use sp_core::H256;
 
@@ -351,7 +350,8 @@ pub mod pallet {
 		type VetoOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
 		/// Overarching type of all pallets origins.
-		type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>> + From<RawOrigin<BalanceOf<Self>>>;
+		type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>
+			+ From<RawOrigin<BalanceOf<Self>>>;
 
 		type Citizenship: CitizenshipChecker<Self::AccountId>;
 		type LLM: LLM<Self::AccountId, BalanceOf<Self>>;
@@ -598,7 +598,7 @@ pub mod pallet {
 		/// - `value`: The amount of deposit (must be at least `MinimumDeposit`).
 		///
 		/// Action will be dispatched with pallet_democracy::RawOrigin::Referendum origin.
-		/// 
+		///
 		/// Emits `Proposed`.
 		#[pallet::call_index(100)]
 		#[pallet::weight(T::WeightInfo::propose())]
@@ -830,7 +830,7 @@ pub mod pallet {
 			if let Some((ext_proposal, _)) = NextExternal::<T>::get() {
 				ensure!(proposal_hash == ext_proposal.hash(), Error::<T>::ProposalMissing);
 			} else {
-				return Err(Error::<T>::NoProposal.into())
+				return Err(Error::<T>::NoProposal.into());
 			}
 
 			let mut existing_vetoers =
@@ -1139,7 +1139,12 @@ impl<T: Config> Pallet<T> {
 		Self::maturing_referenda_at_inner(n, next..last)
 	}
 
-	fn do_propose(who: T::AccountId, proposal: BoundedCallOf<T>, value: BalanceOf<T>, dispatch_origin: DispatchOrigin) -> DispatchResult {
+	fn do_propose(
+		who: T::AccountId,
+		proposal: BoundedCallOf<T>,
+		value: BalanceOf<T>,
+		dispatch_origin: DispatchOrigin,
+	) -> DispatchResult {
 		T::Citizenship::ensure_politics_allowed(&who)?;
 
 		ensure!(value >= T::MinimumDeposit::get(), Error::<T>::ValueLow);
@@ -1466,8 +1471,14 @@ impl<T: Config> Pallet<T> {
 	) -> ReferendumIndex {
 		let ref_index = Self::referendum_count();
 		ReferendumCount::<T>::put(ref_index + 1);
-		let status =
-			ReferendumStatus { end, proposal, dispatch_origin, threshold, delay, tally: Default::default() };
+		let status = ReferendumStatus {
+			end,
+			proposal,
+			dispatch_origin,
+			threshold,
+			delay,
+			tally: Default::default(),
+		};
 		let item = ReferendumInfo::Ongoing(status);
 		<ReferendumInfoOf<T>>::insert(ref_index, item);
 		Self::deposit_event(Event::<T>::Started { ref_index, threshold });
@@ -1498,7 +1509,7 @@ impl<T: Config> Pallet<T> {
 			);
 			Ok(())
 		} else {
-			return Err(Error::<T>::NoneWaiting.into())
+			return Err(Error::<T>::NoneWaiting.into());
 		}
 	}
 
@@ -1524,7 +1535,7 @@ impl<T: Config> Pallet<T> {
 			}
 			Ok(())
 		} else {
-			return Err(Error::<T>::NoneWaiting.into())
+			return Err(Error::<T>::NoneWaiting.into());
 		}
 	}
 
@@ -1534,9 +1545,7 @@ impl<T: Config> Pallet<T> {
 		status: ReferendumStatus<T::BlockNumber, BoundedCallOf<T>, BalanceOf<T>>,
 	) -> bool {
 		let politi_pooled = T::LLM::get_politi_pooled_amount();
-		let approved = status
-			.threshold
-			.approved(status.tally.clone(), politi_pooled);
+		let approved = status.threshold.approved(status.tally.clone(), politi_pooled);
 
 		if approved {
 			Self::deposit_event(Event::<T>::Passed { ref_index: index });
@@ -1621,8 +1630,8 @@ impl<T: Config> Pallet<T> {
 		//   of unbaked referendum is bounded by this number. In case those number have changed in a
 		//   runtime upgrade the formula should be adjusted but the bound should still be sensible.
 		<LowestUnbaked<T>>::mutate(|ref_index| {
-			while *ref_index < last &&
-				Self::referendum_info(*ref_index)
+			while *ref_index < last
+				&& Self::referendum_info(*ref_index)
 					.map_or(true, |info| matches!(info, ReferendumInfo::Finished { .. }))
 			{
 				*ref_index += 1
@@ -1660,29 +1669,24 @@ fn decode_compact_u32_at(key: &[u8]) -> Option<u32> {
 }
 
 pub struct EnsureReferendumProportionAtLeast<T: Config, const N: u32, const D: u32> {
-		_phantom: sp_std::marker::PhantomData<T>,
+	_phantom: sp_std::marker::PhantomData<T>,
 }
 
-impl<
-		T: Config,
-		O: Into<Result<Origin<T>, O>> + From<Origin<T>>,
-		const N: u32,
-		const D: u32,
-	> EnsureOrigin<O> for EnsureReferendumProportionAtLeast<T, N, D>
+impl<T: Config, O: Into<Result<Origin<T>, O>> + From<Origin<T>>, const N: u32, const D: u32>
+	EnsureOrigin<O> for EnsureReferendumProportionAtLeast<T, N, D>
 {
 	type Success = ();
 	fn try_origin(o: O) -> Result<Self::Success, O> {
 		let n: BalanceOf<T> = N.into();
 		let d: BalanceOf<T> = D.into();
-		let votes_passing = |t: &Tally<BalanceOf<T>>| {
-			t.ayes * d >= n * (t.ayes + t.nays)
-		};
+		let votes_passing = |t: &Tally<BalanceOf<T>>| t.ayes * d >= n * (t.ayes + t.nays);
 		let voters_passing = |t: &Tally<BalanceOf<T>>| {
 			t.aye_voters * D as u64 >= N as u64 * (t.aye_voters + t.nay_voters)
 		};
 		o.into().and_then(|o| match o {
-			RawOrigin::Referendum(t, _electorate) if votes_passing(&t) && voters_passing(&t) =>
-				Ok(()),
+			RawOrigin::Referendum(t, _electorate) if votes_passing(&t) && voters_passing(&t) => {
+				Ok(())
+			},
 			r => Err(O::from(r)),
 		})
 	}

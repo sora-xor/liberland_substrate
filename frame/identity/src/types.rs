@@ -19,7 +19,6 @@
 
 // You should have received a copy of the MIT license along with this program. If not, see https://opensource.org/licenses/MIT
 
-
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use enumflags2::{bitflags, BitFlags};
@@ -401,8 +400,9 @@ impl<
 	> Registration<Balance, MaxJudgements, MaxAdditionalFields>
 {
 	pub(crate) fn total_deposit(&self) -> Balance {
-		self.deposit +
-			self.judgements
+		self.deposit
+			+ self
+				.judgements
 				.iter()
 				.map(|(_, ref j)| if let Judgement::FeePaid(fee) = j { *fee } else { Zero::zero() })
 				.fold(Zero::zero(), |a, i| a + i)

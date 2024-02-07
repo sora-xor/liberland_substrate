@@ -2104,12 +2104,7 @@ fn claim_swap_should_work() {
 
 		assert_ok!(Nfts::force_create(RuntimeOrigin::root(), user_1, default_collection_config()));
 
-		assert_ok!(Nfts::mint(
-			RuntimeOrigin::signed(user_1),
-			collection_id,
-			item_1,user_1,
-			None,
-		));
+		assert_ok!(Nfts::mint(RuntimeOrigin::signed(user_1), collection_id, item_1, user_1, None,));
 		assert_ok!(Nfts::force_mint(
 			RuntimeOrigin::signed(user_1),
 			collection_id,
@@ -2124,13 +2119,7 @@ fn claim_swap_should_work() {
 			user_2,
 			default_item_config(),
 		));
-		assert_ok!(Nfts::mint(
-			RuntimeOrigin::signed(user_1),
-			collection_id,
-			item_4,
-			user_1,
-			None,
-		));
+		assert_ok!(Nfts::mint(RuntimeOrigin::signed(user_1), collection_id, item_4, user_1, None,));
 		assert_ok!(Nfts::force_mint(
 			RuntimeOrigin::signed(user_1),
 			collection_id,
@@ -2359,9 +2348,9 @@ fn collection_locking_should_work() {
 
 		let stored_config = CollectionConfigOf::<Test>::get(collection_id).unwrap();
 		let full_lock_config = collection_config_from_disabled_settings(
-			CollectionSetting::TransferableItems |
-				CollectionSetting::UnlockedMetadata |
-				CollectionSetting::UnlockedAttributes,
+			CollectionSetting::TransferableItems
+				| CollectionSetting::UnlockedMetadata
+				| CollectionSetting::UnlockedAttributes,
 		);
 		assert_eq!(stored_config, full_lock_config);
 	});
@@ -2526,7 +2515,10 @@ fn set_citizenship_required_verifies_origin() {
 		assert_ok!(Nfts::force_create(RuntimeOrigin::root(), 1, default_collection_config()));
 		assert_ok!(Nfts::set_citizenship_required(RuntimeOrigin::signed(1), 0, false));
 		assert_ok!(Nfts::set_citizenship_required(RuntimeOrigin::root(), 0, false));
-		assert_noop!(Nfts::set_citizenship_required(RuntimeOrigin::signed(2), 0, false), Error::<Test>::NoPermission);
+		assert_noop!(
+			Nfts::set_citizenship_required(RuntimeOrigin::signed(2), 0, false),
+			Error::<Test>::NoPermission
+		);
 	})
 }
 
@@ -2536,9 +2528,15 @@ fn citizenship_is_checked_when_set() {
 		// Only 100 and 101 are considered citizens
 		assert_ok!(Nfts::force_create(RuntimeOrigin::root(), 1, default_collection_config()));
 		assert_ok!(Nfts::set_citizenship_required(RuntimeOrigin::signed(1), 0, true));
-		assert_noop!(Nfts::mint(RuntimeOrigin::signed(1), 0, 42, 1, None), DispatchError::Other("NotCitizen"));
+		assert_noop!(
+			Nfts::mint(RuntimeOrigin::signed(1), 0, 42, 1, None),
+			DispatchError::Other("NotCitizen")
+		);
 		assert_ok!(Nfts::mint(RuntimeOrigin::signed(1), 0, 42, 100, None));
-		assert_noop!(Nfts::transfer(RuntimeOrigin::signed(100), 0, 42, 1), DispatchError::Other("NotCitizen"));
+		assert_noop!(
+			Nfts::transfer(RuntimeOrigin::signed(100), 0, 42, 1),
+			DispatchError::Other("NotCitizen")
+		);
 		assert_ok!(Nfts::transfer(RuntimeOrigin::signed(100), 0, 42, 101));
 
 		assert_ok!(Nfts::set_citizenship_required(RuntimeOrigin::signed(1), 0, false));

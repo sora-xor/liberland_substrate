@@ -25,10 +25,10 @@
 pub mod currency {
 	use node_primitives::Balance;
 
-	pub const MICROCENTS: Balance = 10_000;             // =            10_000 = 0.00000001 LLD
+	pub const MICROCENTS: Balance = 10_000; // =            10_000 = 0.00000001 LLD
 	pub const MILLICENTS: Balance = 1_000 * MICROCENTS; // =        10_000_000 = 0.00001 LLD
-	pub const CENTS: Balance = 1_000 * MILLICENTS;      // =    10_000_000_000 = 0.01 LLD
-	pub const DOLLARS: Balance = 100 * CENTS;           // = 1_000_000_000_000 = 1 LLD
+	pub const CENTS: Balance = 1_000 * MILLICENTS; // =    10_000_000_000 = 0.01 LLD
+	pub const DOLLARS: Balance = 100 * CENTS; // = 1_000_000_000_000 = 1 LLD
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
 		items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
@@ -73,7 +73,7 @@ pub mod time {
 
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
-	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 60 * MINUTES; // 60,change me 
+	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 60 * MINUTES; // 60,change me
 	pub const EPOCH_DURATION_IN_SLOTS: u64 = {
 		const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
 

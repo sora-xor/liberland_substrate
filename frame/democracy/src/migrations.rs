@@ -61,7 +61,9 @@ mod v0 {
 pub mod v1 {
 	use super::*;
 
-	#[derive(Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[derive(
+		Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo,
+	)]
 	pub struct Tally<Balance> {
 		/// The number of aye votes, expressed in terms of post-conviction lock-vote.
 		pub ayes: Balance,
@@ -89,7 +91,10 @@ pub mod v1 {
 	#[storage_alias]
 	pub type PublicProps<T: Config> = StorageValue<
 		Pallet<T>,
-		BoundedVec<(PropIndex, BoundedCallOf<T>, <T as frame_system::Config>::AccountId), <T as pallet::Config>::MaxProposals>,
+		BoundedVec<
+			(PropIndex, BoundedCallOf<T>, <T as frame_system::Config>::AccountId),
+			<T as pallet::Config>::MaxProposals,
+		>,
 		ValueQuery,
 	>;
 
@@ -98,7 +103,11 @@ pub mod v1 {
 		Pallet<T>,
 		Twox64Concat,
 		ReferendumIndex,
-		v1::ReferendumInfo<<T as frame_system::Config>::BlockNumber, BoundedCallOf<T>, BalanceOf<T>>,
+		v1::ReferendumInfo<
+			<T as frame_system::Config>::BlockNumber,
+			BoundedCallOf<T>,
+			BalanceOf<T>,
+		>,
 	>;
 
 	/// Migration for translating bare `Hash`es into `Bounded<Call>`s.
@@ -128,7 +137,7 @@ pub mod v1 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 0"
 				);
-				return weight
+				return weight;
 			}
 
 			ReferendumInfoOf::<T>::translate(
@@ -136,16 +145,18 @@ pub mod v1 {
 					weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
 					log::info!(target: TARGET, "migrating referendum #{:?}", &index);
 					Some(match old {
-						ReferendumInfo::Ongoing(status) =>
+						ReferendumInfo::Ongoing(status) => {
 							ReferendumInfo::Ongoing(v1::ReferendumStatus {
 								end: status.end,
 								proposal: Bounded::from_legacy_hash(status.proposal),
 								threshold: status.threshold,
 								delay: status.delay,
 								tally: status.tally,
-							}),
-						ReferendumInfo::Finished { approved, end } =>
-							ReferendumInfo::Finished { approved, end },
+							})
+						},
+						ReferendumInfo::Finished { approved, end } => {
+							ReferendumInfo::Finished { approved, end }
+						},
 					})
 				},
 			);
@@ -232,7 +243,12 @@ pub mod v2 {
 		Pallet<T>,
 		Twox64Concat,
 		<T as frame_system::Config>::AccountId,
-		v2::Voting<BalanceOf<T>, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, <T as pallet::Config>::MaxVotes>,
+		v2::Voting<
+			BalanceOf<T>,
+			<T as frame_system::Config>::AccountId,
+			<T as frame_system::Config>::BlockNumber,
+			<T as pallet::Config>::MaxVotes,
+		>,
 	>;
 
 	/// Migration for adding origin type to proposals and referendums.
@@ -260,34 +276,51 @@ pub mod v2 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 1"
 				);
-				return weight
+				return weight;
 			}
 
-			ReferendumInfoOf::<T>::translate::<v1::ReferendumInfo::<<T as frame_system::Config>::BlockNumber, BoundedCallOf<T>, BalanceOf<T>>, _>(
-				|index, old: v1::ReferendumInfo<T::BlockNumber, BoundedCallOf<T>, BalanceOf<T>>| {
-					weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-					log::info!(target: TARGET, "migrating referendum #{:?}", &index);
-					Some(match old {
-						v1::ReferendumInfo::Ongoing(status) =>
-							ReferendumInfo::Ongoing(ReferendumStatus {
-								end: status.end,
-								proposal: status.proposal,
-								threshold: status.threshold,
-								delay: status.delay,
-								dispatch_origin: DispatchOrigin::Root,
-								tally: Tally {
-									ayes: status.tally.ayes,
-									nays: status.tally.nays,
-									aye_voters: status.tally.ayes.checked_mul(&10000u32.into())?.try_into().unwrap_or_default(), // this is OK - voters are only used for DispatchOrigin::Rich, so we lose nothing if these are invalid
-									nay_voters: status.tally.nays.checked_mul(&10000u32.into())?.try_into().unwrap_or_default(), // FIXME but what about underflow when votes are removed?
-									turnout: status.tally.turnout,
-								}
-							}),
-						v1::ReferendumInfo::Finished { approved, end } =>
-							ReferendumInfo::Finished { approved, end },
-					})
-				},
-			);
+			ReferendumInfoOf::<T>::translate::<
+				v1::ReferendumInfo<
+					<T as frame_system::Config>::BlockNumber,
+					BoundedCallOf<T>,
+					BalanceOf<T>,
+				>,
+				_,
+			>(|index, old: v1::ReferendumInfo<T::BlockNumber, BoundedCallOf<T>, BalanceOf<T>>| {
+				weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+				log::info!(target: TARGET, "migrating referendum #{:?}", &index);
+				Some(match old {
+					v1::ReferendumInfo::Ongoing(status) => {
+						ReferendumInfo::Ongoing(ReferendumStatus {
+							end: status.end,
+							proposal: status.proposal,
+							threshold: status.threshold,
+							delay: status.delay,
+							dispatch_origin: DispatchOrigin::Root,
+							tally: Tally {
+								ayes: status.tally.ayes,
+								nays: status.tally.nays,
+								aye_voters: status
+									.tally
+									.ayes
+									.checked_mul(&10000u32.into())?
+									.try_into()
+									.unwrap_or_default(), // this is OK - voters are only used for DispatchOrigin::Rich, so we lose nothing if these are invalid
+								nay_voters: status
+									.tally
+									.nays
+									.checked_mul(&10000u32.into())?
+									.try_into()
+									.unwrap_or_default(), // FIXME but what about underflow when votes are removed?
+								turnout: status.tally.turnout,
+							},
+						})
+					},
+					v1::ReferendumInfo::Finished { approved, end } => {
+						ReferendumInfo::Finished { approved, end }
+					},
+				})
+			});
 
 			let props = v1::PublicProps::<T>::take()
 				.into_iter()
@@ -357,39 +390,40 @@ pub mod v3 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 2"
 				);
-				return weight
+				return weight;
 			}
 
-			VotingOf::<T>::translate::<v2::Voting::<BalanceOf<T>, T::AccountId, T::BlockNumber, T::MaxVotes>, _>(
-				|_acc, old: v2::Voting::<BalanceOf<T>, T::AccountId, T::BlockNumber, T::MaxVotes>| {
-					weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-					log::info!(target: TARGET, "migrating votingof");
-					Some(match old {
-						v2::Voting::Direct { votes, delegations, prior } =>
-							Voting::Direct {
-								votes,
-								delegations: Delegations {
-									voters: 1,
-									votes: delegations.votes,
-									capital: delegations.capital,
-								},
-								prior
-							} ,
-						v2::Voting::Delegating { balance, target, conviction, delegations, prior } =>
-							Voting::Delegating {
-								balance,
-								target,
-								conviction,
-								delegations: Delegations {
-									voters: 1,
-									votes: delegations.votes,
-									capital: delegations.capital,
-								},
-								prior,
+			VotingOf::<T>::translate::<
+				v2::Voting<BalanceOf<T>, T::AccountId, T::BlockNumber, T::MaxVotes>,
+				_,
+			>(|_acc, old: v2::Voting<BalanceOf<T>, T::AccountId, T::BlockNumber, T::MaxVotes>| {
+				weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+				log::info!(target: TARGET, "migrating votingof");
+				Some(match old {
+					v2::Voting::Direct { votes, delegations, prior } => Voting::Direct {
+						votes,
+						delegations: Delegations {
+							voters: 1,
+							votes: delegations.votes,
+							capital: delegations.capital,
+						},
+						prior,
+					},
+					v2::Voting::Delegating { balance, target, conviction, delegations, prior } => {
+						Voting::Delegating {
+							balance,
+							target,
+							conviction,
+							delegations: Delegations {
+								voters: 1,
+								votes: delegations.votes,
+								capital: delegations.capital,
 							},
-					})
-				},
-			);
+							prior,
+						}
+					},
+				})
+			});
 
 			StorageVersion::new(3).put::<Pallet<T>>();
 
