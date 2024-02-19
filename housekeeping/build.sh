@@ -6,4 +6,8 @@ build(){
     cargo b -r
 }
 
-build
+if [ "$1" == "build" ]; then
+    build
+else
+    exit 1
+fi
