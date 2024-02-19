@@ -6,8 +6,9 @@ build(){
     cargo b -r
 }
 
-if [ "$1" == "build" ]; then
-    build
+# build func
+if [ "$(type -t $1)" = "function" ]; then
+    "$1"
 else
-    exit 1
+    echo "Func '$1' is not exists in this workflow. Skipping."
 fi
