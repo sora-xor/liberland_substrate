@@ -2,12 +2,14 @@
 set -e
 
 build(){
+    echo '⚡️ Running build'
     cargo b -r
 }
 
 test(){
-    cargo test
+    echo '⚡️ Running tests'
+    cargo test -r
 }
 
-build
 test
+build
