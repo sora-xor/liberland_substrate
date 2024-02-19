@@ -2,7 +2,7 @@
 
 def pipeline = new org.rust.AppPipeline(steps: this,
       initSubmodules: true,
-      envImageName: 'docker.soramitsu.co.jp/sora2/env:env',
+      envImageName: 'docker.soramitsu.co.jp/sora2/env:liberland-env',
       appImageName: 'docker.soramitsu.co.jp/sora2/liberland',
       disableCodeCoverage: true,
       pushTags: ['feature/dops-2837': 'dev'],
