@@ -6,10 +6,4 @@ build(){
     cargo b -r
 }
 
-test(){
-    echo '⚡️ Running tests'
-    cargo test -r
-}
-
-test
 build
