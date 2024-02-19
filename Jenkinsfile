@@ -9,7 +9,6 @@ def pipeline = new org.rust.AppPipeline(steps: this,
       buildTestCmds: ['housekeeping/build.sh'],
       secretScannerExclusion: 'specs/mainnet.json|.*Cargo.toml',
       deepSecretScannerExclusion: ['specs/mainnet.json'],
-      buildArtifacts: "target/release/wbuild/kitchensink-runtime/kitchensink_runtime.compact.compressed.wasm",
-      codeCoverage: false
+      buildArtifacts: "target/release/wbuild/kitchensink-runtime/kitchensink_runtime.compact.compressed.wasm"
 )
 pipeline.runPipeline()
