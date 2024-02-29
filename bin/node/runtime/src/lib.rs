@@ -25,6 +25,8 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
 #![recursion_limit = "512"]
 
+use bridge_types::LiberlandAssetId;
+pub use bridge_types::{GenericNetworkId, SubNetworkId};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_election_provider_support::{
 	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
@@ -32,13 +34,12 @@ use frame_election_provider_support::{
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
-	BoundedVec,
 	pallet_prelude::Get,
 	parameter_types,
 	traits::{
-		AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU16, ConstU32, MapSuccess,
-		Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, Everything, Imbalance, InstanceFilter,
-		KeyOwnerProofSystem, LockIdentifier, Nothing, OnUnbalanced, U128CurrencyToVote,
+		AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU16, ConstU32, Currency, EitherOf,
+		EitherOfDiverse, EqualPrivilegeOnly, Everything, Imbalance, InstanceFilter,
+		KeyOwnerProofSystem, LockIdentifier, MapSuccess, Nothing, OnUnbalanced, U128CurrencyToVote,
 	},
 	weights::{
 		constants::{
@@ -46,7 +47,7 @@ use frame_support::{
 		},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug, StorageHasher,
+	BoundedVec, PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -67,13 +68,14 @@ use sp_api::impl_runtime_apis;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::{CheckInherentsResult, InherentData};
+use sp_runtime::transaction_validity::TransactionLongevity;
 use sp_runtime::{
 	create_runtime_str,
 	curve::PiecewiseLinear,
 	generic, impl_opaque_keys,
 	traits::{
-		self, BlakeTwo256, Block as BlockT, Bounded, ConvertInto, NumberFor, OpaqueKeys,
-		SaturatedConversion, StaticLookup, AccountIdConversion, AccountIdLookup, Keccak256,
+		self, AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded,
+		ConvertInto, Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill, Perquintill,
@@ -83,7 +85,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use sp_runtime::transaction_validity::TransactionLongevity;
 
 #[cfg(any(feature = "std", test))]
 pub use frame_system::Call as SystemCall;
@@ -99,14 +100,13 @@ pub use sp_runtime::BuildStorage;
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
 use impls::{
-	Author, CreditToBlockAuthor, OnStakerSlashNoop, ToAccountId,
-	IdentityCallFilter, RegistryCallFilter, NftsCallFilter, OnLLMPoliticsUnlock,
-	ContainsMember
+	Author, ContainsMember, CreditToBlockAuthor, IdentityCallFilter, NftsCallFilter,
+	OnLLMPoliticsUnlock, OnStakerSlashNoop, RegistryCallFilter, ToAccountId,
 };
 
 /// Constant values used within the runtime.
 pub mod constants;
-use constants::{currency::*, time::*, llm::*};
+use constants::{currency::*, llm::*, time::*};
 use sp_runtime::generic::Era;
 
 /// Generated voter bag information.
@@ -304,18 +304,16 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(
 				c,
-				RuntimeCall::Balances(..) |
-					RuntimeCall::Assets(..) |
-					RuntimeCall::Nfts(..)
+				RuntimeCall::Balances(..) | RuntimeCall::Assets(..) | RuntimeCall::Nfts(..)
 			),
 			ProxyType::Governance => matches!(
 				c,
-				RuntimeCall::Democracy(..) |
-					RuntimeCall::Council(..) |
-					RuntimeCall::Society(..) |
-					RuntimeCall::TechnicalCommittee(..) |
-					RuntimeCall::Elections(..) |
-					RuntimeCall::Treasury(..)
+				RuntimeCall::Democracy(..)
+					| RuntimeCall::Council(..)
+					| RuntimeCall::Society(..)
+					| RuntimeCall::TechnicalCommittee(..)
+					| RuntimeCall::Elections(..)
+					| RuntimeCall::Treasury(..)
 			),
 			ProxyType::Staking => matches!(c, RuntimeCall::Staking(..)),
 		}
@@ -581,7 +579,7 @@ impl pallet_staking::Config for Runtime {
 	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
 	type BenchmarkingConfig = StakingBenchmarkingConfig;
 	type Citizenship = LLM;
-	#[cfg(any(test,feature = "runtime-benchmarks"))]
+	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	type LLInitializer = LiberlandInitializer;
 }
 
@@ -660,8 +658,8 @@ impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
 			max => {
 				let seed = sp_io::offchain::random_seed();
 				let random = <u32>::decode(&mut TrailingZeroInput::new(&seed))
-					.expect("input is padded with zeroes; qed") %
-					max.saturating_add(1);
+					.expect("input is padded with zeroes; qed")
+					% max.saturating_add(1);
 				random as usize
 			},
 		};
@@ -793,11 +791,10 @@ impl pallet_democracy::Config for Runtime {
 	type InstantAllowed = frame_support::traits::ConstBool<true>;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
 	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-	type CancellationOrigin =
-		EitherOf<
-			HalfSenateOrigin,
-			pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>
-		>;
+	type CancellationOrigin = EitherOf<
+		HalfSenateOrigin,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
 	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
 	// Root must agree.
 	type CancelProposalOrigin = EitherOfDiverse<
@@ -805,7 +802,7 @@ impl pallet_democracy::Config for Runtime {
 		EitherOf<
 			HalfSenateOrigin,
 			pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
-		>
+		>,
 	>;
 	type BlacklistOrigin = EnsureRoot<AccountId>;
 	// Any single technical committee member may veto a coming council proposal, however they can
@@ -913,7 +910,8 @@ parameter_types! {
 	pub const SenateMaxMembers: u32 = 100;
 }
 type SenateCollective = pallet_collective::Instance3;
-type HalfSenateOrigin = pallet_collective::EnsureProportionMoreThan<AccountId, SenateCollective, 1, 2>;
+type HalfSenateOrigin =
+	pallet_collective::EnsureProportionMoreThan<AccountId, SenateCollective, 1, 2>;
 impl pallet_collective::Config<SenateCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Proposal = RuntimeCall;
@@ -1007,7 +1005,6 @@ impl pallet_bounties::Config for Runtime {
 	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
 	type ChildBountyManager = ChildBounties;
 }
-
 
 parameter_types! {
 	pub const ChildBountyValueMinimum: Balance = 1 * DOLLARS;
@@ -1265,12 +1262,12 @@ impl pallet_society::Config for Runtime {
 }
 
 impl pallet_mmr::Config for Runtime {
-    const INDEXING_PREFIX: &'static [u8] = b"mmr";
-    type Hashing = <Runtime as frame_system::Config>::Hashing;
-    type Hash = <Runtime as frame_system::Config>::Hash;
-    type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
-    type OnNewRoot = ();
-    type WeightInfo = ();
+	const INDEXING_PREFIX: &'static [u8] = b"mmr";
+	type Hashing = <Runtime as frame_system::Config>::Hashing;
+	type Hash = <Runtime as frame_system::Config>::Hash;
+	type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
+	type OnNewRoot = ();
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -1332,7 +1329,6 @@ parameter_types! {
 
 impl pallet_liberland_initializer::Config for Runtime {}
 
-
 impl pallet_llm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
@@ -1344,10 +1340,7 @@ impl pallet_llm::Config for Runtime {
 	type AssetName = AssetName;
 	type AssetSymbol = AssetSymbol;
 	type InflationEventInterval = InflationEventInterval;
-	type SenateOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		HalfSenateOrigin
-	>;
+	type SenateOrigin = EitherOfDiverse<EnsureRoot<AccountId>, HalfSenateOrigin>;
 	type OnLLMPoliticsUnlock = OnLLMPoliticsUnlock;
 }
 
@@ -1415,11 +1408,9 @@ impl pallet_liberland_legislation::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Citizenship = LLM;
 	type ConstitutionOrigin = pallet_democracy::EnsureReferendumProportionAtLeast<Self, 3, 4>;
-	type InternationalTreatyOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>; // FIXME what ratio?
-	type LowTierDeleteOrigin = EitherOf<
-		EnsureRoot<AccountId>,
-		HalfSenateOrigin
-	>;
+	type InternationalTreatyOrigin =
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>; // FIXME what ratio?
+	type LowTierDeleteOrigin = EitherOf<EnsureRoot<AccountId>, HalfSenateOrigin>;
 	type LLInitializer = LiberlandInitializer;
 	type WeightInfo = pallet_liberland_legislation::weights::SubstrateWeight<Runtime>;
 }
@@ -1434,7 +1425,7 @@ parameter_types! {
 
 type EnsureMembersAsAccountId<I, A> = MapSuccess<
 	pallet_collective::EnsureProportionMoreThan<AccountId, I, 1, 2>, // half of collective
-	ToAccountId<(), A>
+	ToAccountId<(), A>,
 >;
 
 type RegistryEnsureRegistrar = EitherOf<
@@ -1526,123 +1517,115 @@ impl pallet_office::Config<AssetRegistryOfficeInstance> for Runtime {
 parameter_types! {
 	pub const BridgeMaxMessagePayloadSize: u32 = 256;
 	pub const BridgeMaxMessagesPerCommit: u32 = 20;
-	pub const ThisNetworkId: bridge_types::GenericNetworkId = bridge_types::GenericNetworkId::Sub(bridge_types::SubNetworkId::Custom(1));
+	pub const ThisNetworkId: bridge_types::GenericNetworkId = bridge_types::GenericNetworkId::Sub(bridge_types::SubNetworkId::Liberland);
 	pub const BridgeMaxPeers: u32 = 50;
-    // Not as important as some essential transactions (e.g. im_online or similar ones)
-    pub DataSignerPriority: TransactionPriority = Perbill::from_percent(10) * TransactionPriority::max_value();
-    // We don't want to have not relevant imports be stuck in transaction pool
-    // for too long
-    pub DataSignerLongevity: TransactionLongevity = EPOCH_DURATION_IN_BLOCKS as u64;
-	// pub TechAcc: AccountId = [66; 32].into();
-	// TEMP!!!!
-	// pub TechAcc: AccountId = hex_literal::hex!("`5e9f3c16b9da0caf4749409c6bce2c34caaaed00f6b2e891bf4e891b50a0e7eb").into();
-	pub TechAcc: AccountId = AccountId::new(hex_literal::hex!("dc5201cda01113be2ca9093c49a92763c95c708dd61df70c945df749c365da5d"));
+	// Not as important as some essential transactions (e.g. im_online or similar ones)
+	pub DataSignerPriority: TransactionPriority = Perbill::from_percent(10) * TransactionPriority::max_value();
+	// We don't want to have not relevant imports be stuck in transaction pool
+	// for too long
+	pub DataSignerLongevity: TransactionLongevity = EPOCH_DURATION_IN_BLOCKS as u64;
 	pub const MinAssetBalance: u32 = 1;
+	pub TechAcc: AccountId = AccountId::new(hex_literal::hex!("dc5201cda01113be2ca9093c49a92763c95c708dd61df70c945df749c365da5d"));
 }
 
 // Sora Bridge
 impl leaf_provider::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Hashing = Keccak256;
-    type Hash = <Keccak256 as sp_runtime::traits::Hash>::Output;
-    type Randomness = pallet_babe::RandomnessFromTwoEpochsAgo<Self>;
+	type RuntimeEvent = RuntimeEvent;
+	type Hashing = Keccak256;
+	type Hash = <Keccak256 as sp_runtime::traits::Hash>::Output;
+	type Randomness = pallet_babe::RandomnessFromTwoEpochsAgo<Self>;
 }
 
 // Sora Bridge
 impl substrate_bridge_app::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type OutboundChannel = SubstrateBridgeOutboundChannel;
-    type CallOrigin =
-        dispatch::EnsureAccount<bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>>;
-    type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
-    type AssetRegistry = SoraBridgeProxy;
-    // type AssetRegistry = SoraBridgeProxy;
-    type AccountIdConverter = impls::SoraAccountIdConverter;
-    type AssetIdConverter = impls::SoraAssetIdConverter;
-    type BalancePrecisionConverter = impls::GenericBalancePrecisionConverter;
-    // type BridgeAssetLocker = impls::LiberlandMessageStatusNotifier;
-    type BridgeAssetLocker = SoraBridgeProxy;
-    type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type OutboundChannel = SubstrateBridgeOutboundChannel;
+	type CallOrigin = dispatch::EnsureAccount<
+		bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>,
+	>;
+	type MessageStatusNotifier = SoraBridgeProvider;
+	type AssetRegistry = SoraBridgeProvider;
+	type AccountIdConverter = impls::SoraAccountIdConverter;
+	type AssetIdConverter = impls::SoraAssetIdConverter;
+	type BalancePrecisionConverter = impls::GenericBalancePrecisionConverter;
+	type BridgeAssetLocker = SoraBridgeProvider;
+	type WeightInfo = ();
 }
 
 // Sora Bridge
 impl bridge_data_signer::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type OutboundChannel = SubstrateBridgeOutboundChannel;
-    type CallOrigin =
-        dispatch::EnsureAccount<bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>>;
-    type MaxPeers = BridgeMaxPeers;
-    type UnsignedPriority = DataSignerPriority;
-    type UnsignedLongevity = DataSignerLongevity;
-    type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type OutboundChannel = SubstrateBridgeOutboundChannel;
+	type CallOrigin = dispatch::EnsureAccount<
+		bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>,
+	>;
+	type MaxPeers = BridgeMaxPeers;
+	type UnsignedPriority = DataSignerPriority;
+	type UnsignedLongevity = DataSignerLongevity;
+	type WeightInfo = ();
 }
 
 // Sora Bridge
 impl multisig_verifier::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type CallOrigin =
-        dispatch::EnsureAccount<bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>>;
-    type OutboundChannel = SubstrateBridgeOutboundChannel;
-    type MaxPeers = BridgeMaxPeers;
-    type WeightInfo = ();
-    type ThisNetworkId = ThisNetworkId;
+	type RuntimeEvent = RuntimeEvent;
+	type CallOrigin = dispatch::EnsureAccount<
+		bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>,
+	>;
+	type OutboundChannel = SubstrateBridgeOutboundChannel;
+	type MaxPeers = BridgeMaxPeers;
+	type WeightInfo = ();
+	type ThisNetworkId = ThisNetworkId;
 }
 
 // Sora Bridge
 impl dispatch::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type OriginOutput = bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>;
-    type Origin = RuntimeOrigin;
-    type MessageId = bridge_types::types::MessageId;
-    type Hashing = Keccak256;
-    type Call = impls::DispatchableSubstrateBridgeCall;
-    type CallFilter = impls::SoraBridgeCallFilter;
-    type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type OriginOutput =
+		bridge_types::types::CallOriginOutput<bridge_types::SubNetworkId, sp_core::H256, ()>;
+	type Origin = RuntimeOrigin;
+	type MessageId = bridge_types::types::MessageId;
+	type Hashing = Keccak256;
+	type Call = impls::DispatchableSubstrateBridgeCall;
+	type CallFilter = impls::SoraBridgeCallFilter;
+	type WeightInfo = ();
 }
 
 // Sora Bridge
 impl substrate_bridge_channel::inbound::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Verifier = impls::MultiVerifier;
-    type MessageDispatch = SubstrateDispatch;
-    type UnsignedPriority = DataSignerPriority;
-    type UnsignedLongevity = DataSignerLongevity;
-    type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
-    type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
-    type ThisNetworkId = ThisNetworkId;
-    type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type Verifier = impls::MultiVerifier;
+	type MessageDispatch = SubstrateDispatch;
+	type UnsignedPriority = DataSignerPriority;
+	type UnsignedLongevity = DataSignerLongevity;
+	type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
+	type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
+	type ThisNetworkId = ThisNetworkId;
+	type WeightInfo = ();
 }
 
 // Sora Bridge
 impl substrate_bridge_channel::outbound::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
-    // type MessageStatusNotifier = impls::LiberlandMessageStatusNotifier;
-    type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
-    type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
-    type AuxiliaryDigestHandler = LeafProvider;
-    type AssetId = u32;
-    type Balance = Balance;
-    type TimepointProvider = impls::GenericTimepointProvider;
-    type ThisNetworkId = ThisNetworkId;
-    type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type MessageStatusNotifier = SoraBridgeProvider;
+	type MaxMessagePayloadSize = BridgeMaxMessagePayloadSize;
+	type MaxMessagesPerCommit = BridgeMaxMessagesPerCommit;
+	type AuxiliaryDigestHandler = LeafProvider;
+	type AssetId = bridge_types::LiberlandAssetId;
+	type Balance = Balance;
+	type TimepointProvider = impls::GenericTimepointProvider;
+	type ThisNetworkId = ThisNetworkId;
+	type WeightInfo = ();
 }
 
 // Sora Bridge
-impl substrate_assets_bridgeproxy:: Config for Runtime {
+impl sora_liberland_bridge_provider::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type TechAcc = TechAcc;
 	type MinBalance = MinAssetBalance;
-	type AssetIdGenerator = LiberlandAssetIdGenerator;
-} 
-use bridge_types::H256;
-pub struct LiberlandAssetIdGenerator;
-
-impl substrate_assets_bridgeproxy::AssetIdGenerator<u32> for LiberlandAssetIdGenerator {
-	fn generate_asset_id(hash: H256) -> u32 {
-		let arr: [u8; 4] = hash[..4].try_into().unwrap_or_default();
-		u32::from_be_bytes(arr)
-	}
+	type Balances = Balances;
+	type AssetId = LiberlandAssetId;
+	type SoraApp = SoraBridgeApp;
+	type AccountIdConverter = sp_runtime::traits::Identity;
+	type TimepointProvider = impls::GenericTimepointProvider;
 }
 
 construct_runtime!(
@@ -1709,11 +1692,11 @@ construct_runtime!(
 		LeafProvider: leaf_provider::{Pallet, Storage, Event<T>} = 59,
 		SoraBridgeApp: substrate_bridge_app::{Pallet, Storage, Event<T>, Call} = 60,
 		SubstrateBridgeInboundChannel: substrate_bridge_channel::inbound::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 61,
-        SubstrateBridgeOutboundChannel: substrate_bridge_channel::outbound::{Pallet, Config<T>, Storage, Event<T>} = 62,
-        SubstrateDispatch: dispatch::{Pallet, Storage, Event<T>, Origin<T>} = 63,
-        BridgeDataSigner: bridge_data_signer::{Pallet, Storage, Event<T>, Call, ValidateUnsigned} = 64,
-        MultisigVerifier: multisig_verifier::{Pallet, Storage, Event<T>, Call} = 65,
-		SoraBridgeProxy: substrate_assets_bridgeproxy::{Pallet, Storage, Event<T>, Call} = 66,
+		SubstrateBridgeOutboundChannel: substrate_bridge_channel::outbound::{Pallet, Config<T>, Storage, Event<T>} = 62,
+		SubstrateDispatch: dispatch::{Pallet, Storage, Event<T>, Origin<T>} = 63,
+		BridgeDataSigner: bridge_data_signer::{Pallet, Storage, Event<T>, Call, ValidateUnsigned} = 64,
+		MultisigVerifier: multisig_verifier::{Pallet, Storage, Event<T>, Call} = 65,
+		SoraBridgeProvider: sora_liberland_bridge_provider = 66,
 	}
 );
 
@@ -1760,13 +1743,12 @@ pub type Executive = frame_executive::Executive<
 	Migrations,
 >;
 
-
 // staking is only expected to be used by polkadot/kusama/et al., so they didn't
 // bother to bump the default storage version. as such, we have V7_0_0 version
 // set, but it's actually the layout of V12. Fix it before running V13 migration.
 mod staking_v12 {
 	use super::*;
-	use frame_support::{storage_alias, traits::OnRuntimeUpgrade, pallet_prelude::*};
+	use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade};
 
 	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	enum ObsoleteReleases {
@@ -1791,18 +1773,19 @@ mod staking_v12 {
 	}
 
 	#[storage_alias]
-	type StorageVersion<T: pallet_staking::Config> = StorageValue<pallet_staking::Pallet<T>, ObsoleteReleases, ValueQuery>;
+	type StorageVersion<T: pallet_staking::Config> =
+		StorageValue<pallet_staking::Pallet<T>, ObsoleteReleases, ValueQuery>;
 
 	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
 	impl<T: pallet_staking::Config> OnRuntimeUpgrade for Migration<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
 			frame_support::ensure!(
-                StorageVersion::<T>::get() == ObsoleteReleases::V7_0_0,
-                "Expected v7 before upgrading to v12"
-            );
+				StorageVersion::<T>::get() == ObsoleteReleases::V7_0_0,
+				"Expected v7 before upgrading to v12"
+			);
 
-            Ok(Default::default())
+			Ok(Default::default())
 		}
 
 		fn on_runtime_upgrade() -> Weight {
@@ -1814,9 +1797,9 @@ mod staking_v12 {
 		#[cfg(feature = "try-runtime")]
 		fn post_upgrade(_: Vec<u8>) -> Result<(), &'static str> {
 			frame_support::ensure!(
-                StorageVersion::<T>::get() == ObsoleteReleases::V12_0_0,
-                "Failed to upgrade to v12"
-            );
+				StorageVersion::<T>::get() == ObsoleteReleases::V12_0_0,
+				"Failed to upgrade to v12"
+			);
 			Ok(())
 		}
 	}
@@ -1824,9 +1807,7 @@ mod staking_v12 {
 
 // All migrations executed on runtime upgrade as a nested tuple of types implementing
 // `OnRuntimeUpgrade`.
-type Migrations = (
-	pallet_contracts::Migration<Runtime>,
-);
+type Migrations = (pallet_contracts::Migration<Runtime>,);
 
 /// MMR helper types.
 mod mmr {
@@ -2279,10 +2260,10 @@ impl_runtime_apis! {
 	}
 
 	impl leaf_provider_runtime_api::LeafProviderAPI<Block> for Runtime {
-        fn latest_digest() -> Option<bridge_types::types::AuxiliaryDigest> {
-                LeafProvider::latest_digest().map(|logs| bridge_types::types::AuxiliaryDigest{ logs })
-        }
-    }
+		fn latest_digest() -> Option<bridge_types::types::AuxiliaryDigest> {
+				LeafProvider::latest_digest().map(|logs| bridge_types::types::AuxiliaryDigest{ logs })
+		}
+	}
 
 }
 

@@ -28,7 +28,7 @@ use frame_support::{
 	assert_noop, assert_ok, ord_parameter_types, parameter_types,
 	traits::{
 		AsEnsureOriginWithArg, ConstU32, ConstU64, Contains, EitherOfDiverse, EqualPrivilegeOnly,
-		GenesisBuild, OnInitialize, SortedMembers, StorePreimage, Everything,
+		Everything, GenesisBuild, OnInitialize, SortedMembers, StorePreimage,
 	},
 	weights::Weight,
 };
@@ -37,8 +37,7 @@ use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BadOrigin, BlakeTwo256, IdentityLookup},
-	Perbill,
-	Permill,
+	Perbill, Permill,
 };
 
 mod cancellation;
@@ -318,7 +317,8 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let balances = vec![(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)];
-	let mut llm_balances: Vec<(u64, u64, u64)> = balances.iter().map(|(id, _)| (*id, 6000, 5000)).collect();
+	let mut llm_balances: Vec<(u64, u64, u64)> =
+		balances.iter().map(|(id, _)| (*id, 6000, 5000)).collect();
 	llm_balances.push((7, 1000, 1000));
 
 	pallet_balances::GenesisConfig::<Test> { balances: balances.clone() }

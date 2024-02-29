@@ -1,3 +1,0 @@
-[submodule "scripts/fork-test/fork-off-substrate"]
-	path = scripts/fork-test/fork-off-substrate
-	url = https://github.com/liberland/fork-off-substrate.git

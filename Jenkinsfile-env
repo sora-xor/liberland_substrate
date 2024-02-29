@@ -1,0 +1,13 @@
+@Library('jenkins-library')
+
+def pipeline = new org.docker.AppPipeline(steps: this,
+    dockerImageName:              'sora2/env',
+    dockerRegistryCred:           'bot-sora2-rw',
+    dockerFileName:               'housekeeping/docker/env/Dockerfile',
+    triggerCommonBuildExpression: (env.BRANCH_NAME in ['feature/dops-2837']),
+    triggerCommonBuildGrepRegex:  'housekeeping',
+    secretScannerExclusion:       'specs/mainnet.json|.*Cargo.toml',
+    deepSecretScannerExclusion:   ['specs/mainnet.json'],
+    nameCI:                       'env-CI',
+    dockerImageTags:              ['feature/dops-2837':'liberland-env'])
+pipeline.runPipeline()

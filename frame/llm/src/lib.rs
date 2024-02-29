@@ -564,7 +564,10 @@ pub mod pallet {
 
 		/// Transfer `amount` LLM to `to_account` from treasury
 		/// Used in liberland-initializer and in tests.
-		pub fn transfer_from_treasury(to_account: T::AccountId, amount: T::Balance) -> DispatchResult {
+		pub fn transfer_from_treasury(
+			to_account: T::AccountId,
+			amount: T::Balance,
+		) -> DispatchResult {
 			let treasury = Self::get_llm_treasury_account();
 			Self::transfer(treasury, to_account, amount)
 		}
@@ -651,7 +654,7 @@ pub mod pallet {
 
 		fn maybe_release(block: T::BlockNumber) -> bool {
 			if block < NextRelease::<T>::get() {
-				return false
+				return false;
 			}
 			NextRelease::<T>::put(Self::get_future_block());
 
@@ -685,7 +688,7 @@ pub mod pallet {
 			if Electionlock::<T>::contains_key(account) {
 				let current_block_number = frame_system::Pallet::<T>::block_number();
 				let unlocked_on_block = Electionlock::<T>::get(account);
-				return current_block_number > unlocked_on_block
+				return current_block_number > unlocked_on_block;
 			}
 			true
 		}

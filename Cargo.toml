@@ -110,9 +110,7 @@ pallet-nfts = { path = "frame/nfts" }
 # multisig-verifier = { path = "../sora2-common/pallets/multisig-verifier" }
 # substrate-bridge-channel = { path = "../sora2-common/pallets/substrate-channel" }
 # substrate-bridge-app = { path = "../sora2-common/pallets/substrate-app" }
-# # bridge-channel-rpc = { path = "../sora2-common/pallets/substrate-channel/rpc" }
-# substrate-assets-bridgeproxy = { path = "../sora2-common/pallets/substrate-assets-bridgeproxy" }
-
+# liberland-bridge-provider = { path = "../sora2-common/pallets/liberland-bridge-provider" }
 
 [patch."https://github.com/sora-xor/sora2-common.git"]
 leaf-provider = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
@@ -125,6 +123,4 @@ bridge-data-signer = { git = "https://github.com/sora-xor//sora2-common.git", br
 multisig-verifier = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
 substrate-bridge-channel = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
 substrate-bridge-app = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
-# bridge-channel-rpc = { path = "../sora2-common/pallets/substrate-channel/rpc" }
-substrate-assets-bridgeproxy = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }
-
+liberland-bridge-provider = { git = "https://github.com/sora-xor//sora2-common.git", branch = "update_liberland" }

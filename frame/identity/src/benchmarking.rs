@@ -49,14 +49,15 @@ fn add_registrars<T: Config>(r: u32) -> Result<(), &'static str> {
 		let registrar_origin = T::RegistrarOrigin::successful_origin();
 		Identity::<T>::add_registrar(registrar_origin, registrar_lookup)?;
 		Identity::<T>::set_fee(RawOrigin::Signed(registrar.clone()).into(), i, 10u32.into())?;
-		let fields =
-			IdentityFields(
-				IdentityField::Display |
-					IdentityField::Legal | IdentityField::Web |
-					IdentityField::Riot | IdentityField::Email |
-					IdentityField::PgpFingerprint |
-					IdentityField::Image,
-			);
+		let fields = IdentityFields(
+			IdentityField::Display
+				| IdentityField::Legal
+				| IdentityField::Web
+				| IdentityField::Riot
+				| IdentityField::Email
+				| IdentityField::PgpFingerprint
+				| IdentityField::Image,
+		);
 		Identity::<T>::set_fields(RawOrigin::Signed(registrar.clone()).into(), i, fields)?;
 	}
 
