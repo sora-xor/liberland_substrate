@@ -1,5 +1,4 @@
 doc
-**target*
 .idea/
 Dockerfile
 .dockerignore
