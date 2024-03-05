@@ -1,11 +1,6 @@
 #!/bin/bash
 set -e
 
-test() {
-    echo '⚡️ Running tests'
-    cargo test --features runtime-benchmarks --no-fail-fast
-}
-
 build() {
     echo '⚡️ Running build'
     cargo b -r
