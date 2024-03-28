@@ -465,7 +465,238 @@ pub fn testnet_genesis(
 			super_admin: Some(root_key.clone()),
 			..Default::default()
 		},
-		eth_llm_bridge: EthLLMBridgeConfig {	
+		eth_llm_bridge: EthLLMBridgeConfig {
+			admin: Some(root_key.clone()),
+			super_admin: Some(root_key),
+			..Default::default()
+		},
+		substrate_bridge_outbound_channel: Default::default(),
+		sora_bridge_app: Default::default(),
+	}
+}
+
+
+/// Helper function to create RuntimeGenesisConfig for testing.
+pub fn sora_dev_testnet_genesis(
+	initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+		ImOnlineId,
+		AuthorityDiscoveryId,
+	)>,
+	initial_nominators: Vec<AccountId>,
+	root_key: AccountId,
+	endowed_accounts: Option<Vec<AccountId>>,
+	council_group: Option<Vec<AccountId>>,
+	initial_citizens: Vec<(AccountId, Balance, Balance)>,
+	technical_committee: Option<Vec<AccountId>>,
+	offices_admin: Option<AccountId>,
+	offices_clerks: Vec<AccountId>,
+) -> RuntimeGenesisConfig {
+	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
+		vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+			get_account_id_from_seed::<sr25519::Public>("Dave"),
+			get_account_id_from_seed::<sr25519::Public>("Eve"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			LandRegistryOfficePalletId::get().into_account_truncating(),
+			MetaverseLandRegistryOfficePalletId::get().into_account_truncating(),
+			AssetRegistryOfficePalletId::get().into_account_truncating(),
+		]
+	});
+
+	let council_group: Vec<AccountId> = council_group.unwrap_or(vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+	]);
+
+	// endow all authorities and nominators.
+	initial_authorities
+		.iter()
+		.map(|x| &x.0)
+		.chain(initial_nominators.iter())
+		.for_each(|x| {
+			if !endowed_accounts.contains(x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
+
+	// stakers: all validators and nominators.
+	let mut rng = rand::thread_rng();
+	let stakers = initial_authorities
+		.iter()
+		.map(|x| (x.0.clone(), x.0.clone(), STASH, StakerStatus::Validator))
+		.chain(initial_nominators.iter().map(|x| {
+			use rand::{seq::SliceRandom, Rng};
+			let limit = (MaxNominations::get() as usize).min(initial_authorities.len());
+			let count = rng.gen::<usize>() % limit;
+			let nominations = initial_authorities
+				.as_slice()
+				.choose_multiple(&mut rng, count)
+				.into_iter()
+				.map(|choice| choice.0.clone())
+				.collect::<Vec<_>>();
+			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
+		}))
+		.collect::<Vec<_>>();
+
+	let num_endowed_accounts = endowed_accounts.len();
+
+	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const STASH: Balance = ENDOWMENT / 1000;
+	const INITIAL_STAKE: Balance = 5000 * GRAINS_IN_LLM;
+
+
+	// Add Prefunded accounts
+	let f_ac: Vec<AccountId> = vec![
+		array_bytes::hex_n_into_unchecked("061a7f0a43e35d16f330e64c1a4e5000db4ba064fc3630cc4a9e2027899a5a6f"), // F
+		array_bytes::hex_n_into_unchecked("b86373a2dff0a7b5741fd7e1857de41353fca3b924f14eae5f4c70d69e949150"), // N
+		array_bytes::hex_n_into_unchecked("ba14fb5a00f052330c9c09e0467bce1d7896edefe92851b893e777aade53f921"), // D
+		array_bytes::hex_n_into_unchecked("f874b8c112a9bb565e0798d9b5dcfee0fdbd54dd0fcc865c1251a75bd3faee45"), // M
+		array_bytes::hex_n_into_unchecked("52fd11392742ccf58bcff90c33ca15bdf4bd3416aabcd5d51a654c1f387b6d18"), // V
+	];
+
+	// rewrite, not to use for loop
+	for ac in f_ac.iter() {
+		if !endowed_accounts.contains(ac) {
+			endowed_accounts.push(ac.clone());
+		}
+	}
+
+	// endow all citizens.
+	initial_citizens.iter().map(|x| &x.0)
+		.for_each(|x| {
+			if !endowed_accounts.contains(x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
+
+	let technical_committee = technical_committee.unwrap_or(
+		endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect());
+
+	let identity_clerks = offices_clerks.iter().map(|acc| (acc.clone(), IdentityCallFilter::Judgement)).collect();
+	let registry_clerks = offices_clerks.iter().map(|acc| (acc.clone(), RegistryCallFilter::RegisterOnly)).collect();
+	let nfts_clerks: Vec<(AccountId, NftsCallFilter)> = offices_clerks.iter().map(|acc| (acc.clone(), NftsCallFilter::ManageItems)).collect();
+
+	RuntimeGenesisConfig {
+		system: SystemConfig { code: wasm_binary_unwrap().to_vec(), ..Default::default() },
+		balances: BalancesConfig {
+			balances: {
+				let mut balanced_accounts = endowed_accounts.clone();
+				balanced_accounts.push(AccountId::from_ss58check("5FP9NMFdYHgvsLE4jo2SAECUNWByaLo5HwhRy2wciPFTSMW3").unwrap());
+				balanced_accounts.iter().cloned().map(|x| (x, ENDOWMENT)).collect()
+			},
+		},
+		session: SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: initial_authorities.len() as u32,
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			stakers,
+			citizenship_required: false,
+			..Default::default()
+		},
+		democracy: DemocracyConfig::default(),
+		elections: ElectionsConfig {
+			members: council_group
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.map(|member| (member, INITIAL_STAKE))
+				.collect(),
+		},
+		council: CouncilConfig::default(),
+		senate: SenateConfig::default(),
+		technical_committee: TechnicalCommitteeConfig {
+			members: technical_committee,
+			phantom: Default::default(),
+		},
+		sudo: SudoConfig { key: Some(root_key.clone()) },
+		babe: BabeConfig {
+			epoch_config: Some(kitchensink_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			..Default::default()
+		},
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: Default::default(),
+		grandpa: Default::default(),
+		technical_membership: Default::default(),
+		treasury: Default::default(),
+		society: SocietyConfig { pot: 0 },
+		assets: pallet_assets::GenesisConfig {
+			// This asset is used by the NIS pallet as counterpart currency.
+			assets: vec![(9, get_account_id_from_seed::<sr25519::Public>("Alice"), true, 1)],
+			..Default::default()
+		},
+		pool_assets: Default::default(),
+		transaction_storage: Default::default(),
+		transaction_payment: Default::default(),
+		llm: Default::default(),
+		liberland_initializer: LiberlandInitializerConfig {
+			citizenship_registrar: Some(IdentityOfficePalletId::get().into_account_truncating()),
+			initial_citizens,
+			land_registrar: Some(LandRegistryOfficePalletId::get().into_account_truncating()),
+			metaverse_land_registrar: Some(MetaverseLandRegistryOfficePalletId::get().into_account_truncating()),
+			asset_registrar: Some(AssetRegistryOfficePalletId::get().into_account_truncating()),
+		},
+		company_registry: CompanyRegistryConfig {
+			registries: vec![
+				CompanyRegistryOfficePalletId::get().into_account_truncating()
+			].try_into().unwrap(),
+			entities: vec![],
+		},
+		identity_office: IdentityOfficeConfig {
+			admin: offices_admin.clone(),
+			clerks: identity_clerks,
+		},
+		company_registry_office: CompanyRegistryOfficeConfig {
+			admin: offices_admin.clone(),
+			clerks: registry_clerks,
+		},
+		land_registry_office: LandRegistryOfficeConfig {
+			admin: offices_admin.clone(),
+			clerks: nfts_clerks.clone(),
+		},
+		metaverse_land_registry_office: MetaverseLandRegistryOfficeConfig {
+			admin: offices_admin.clone(),
+			clerks: nfts_clerks.clone(),
+		},
+		asset_registry_office: AssetRegistryOfficeConfig {
+			admin: offices_admin,
+			clerks: nfts_clerks,
+		},
+		eth_lld_bridge: EthLLDBridgeConfig {
+			admin: Some(root_key.clone()),
+			super_admin: Some(root_key.clone()),
+			..Default::default()
+		},
+		eth_llm_bridge: EthLLMBridgeConfig {
 			admin: Some(root_key.clone()),
 			super_admin: Some(root_key),
 			..Default::default()
@@ -503,6 +734,34 @@ fn development_config_genesis() -> RuntimeGenesisConfig {
 	)
 }
 
+fn sora_development_config_genesis() -> RuntimeGenesisConfig {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+	let total_llm = 6000 * GRAINS_IN_LLM;
+	let locked_llm = 5000 * GRAINS_IN_LLM;
+	sora_dev_testnet_genesis(
+		vec![authority_keys_from_seed("Alice")],
+		vec![],
+		AccountId::from_ss58check("5FP9NMFdYHgvsLE4jo2SAECUNWByaLo5HwhRy2wciPFTSMW3").unwrap(),
+		None,
+		None,
+		vec![
+			(alice.clone(), total_llm, locked_llm),
+			(bob.clone(), total_llm, locked_llm),
+			(get_account_id_from_seed::<sr25519::Public>("Charlie"), total_llm, locked_llm),
+			(AccountId::from_ss58check("5G3uZjEpvNAQ6U2eUjnMb66B8g6d8wyB68x6CfkRPNcno8eR").unwrap(), total_llm, locked_llm), // Citizen1
+			(AccountId::from_ss58check("5GGgzku3kHSnAjxk7HBNeYzghSLsQQQGGznZA7u3h6wZUseo").unwrap(), total_llm, locked_llm), // Dorian
+			(AccountId::from_ss58check("5GZXCJvjfniCCLmKiyqzXLdwgcSgiQNUtsuFVhrpvfjopShL").unwrap(), total_llm, locked_llm), // Laissez sudo
+			(AccountId::from_ss58check("5GjYePC6HKJGGnEzEZzSvimy6uctuMat4Kr2tjACtKyY9nhT").unwrap(), total_llm, locked_llm), // Web3_Test1
+			(AccountId::from_ss58check("5EqhBxsfDdbddFxcdRPhDBx8V3N2QyQspV5FNfQeT8nFQtj8").unwrap(), total_llm, locked_llm), // Web3_Test2
+			(AccountId::from_ss58check("5CkYuVwK6bRjjaqam76VkPG4xXb1TsmbSQzWrMwaFnQ1nu6z").unwrap(), total_llm, locked_llm), // Web3_Test3
+		],
+		None,
+		Some(alice.clone()),
+		vec![bob.clone()],
+	)
+}
+
 /// Development config (single validator Alice).
 pub fn development_config() -> ChainSpec {
 	ChainSpec::from_genesis(
@@ -510,6 +769,22 @@ pub fn development_config() -> ChainSpec {
 		"dev",
 		ChainType::Development,
 		development_config_genesis,
+		vec![],
+		None,
+		None,
+		None,
+		Some(properties()),
+		Default::default(),
+	)
+}
+
+/// Sora Development config (single validator Alice).
+pub fn sora_development_config() -> ChainSpec {
+	ChainSpec::from_genesis(
+		"SoraDevelopment",
+		"sora_dev",
+		ChainType::Development,
+		sora_development_config_genesis,
 		vec![],
 		None,
 		None,
